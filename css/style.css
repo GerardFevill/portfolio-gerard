@@ -1371,6 +1371,24 @@ body.light-mode .theme-toggle .moon-icon {
     }
 }
 
+/* Scroll indicator responsive */
+@media (max-width: 768px) {
+    .scroll-indicator {
+        bottom: 15px;
+        font-size: 0.8rem;
+    }
+
+    .scroll-line {
+        height: 30px;
+    }
+}
+
+@media (max-width: 480px) {
+    .scroll-indicator {
+        display: none;
+    }
+}
+
 /* ===============================================
    POPUP NOTIFICATION
    =============================================== */
