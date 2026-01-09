@@ -29,7 +29,17 @@ jobs:
 
       - name: Invalidate CloudFront cache
         run: |
-          aws cloudfront create-invalidation \
-            --distribution-id ${{ secrets.CLOUDFRONT_DISTRIBUTION_ID }} \
-            --paths "/*"
+          # Trouver la distribution CloudFront pour gerard-nouglozeh.com
+          DISTRIBUTION_ID=$(aws cloudfront list-distributions \
+            --query "DistributionList.Items[?Aliases.Items[?contains(@,'gerard-nouglozeh.com')]].Id" \
+            --output text)
+
+          if [ -n "$DISTRIBUTION_ID" ]; then
+            echo "Invalidating CloudFront distribution: $DISTRIBUTION_ID"
+            aws cloudfront create-invalidation \
+              --distribution-id $DISTRIBUTION_ID \
+              --paths "/*"
+          else
+            echo "No CloudFront distribution found for gerard-nouglozeh.com"
+          fi
         continue-on-error: true

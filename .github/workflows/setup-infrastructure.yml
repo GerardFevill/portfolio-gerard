@@ -1,0 +1,192 @@
+name: Setup AWS Infrastructure
+
+# Se lance manuellement une seule fois
+on:
+  workflow_dispatch:
+
+jobs:
+  setup:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-east-1
+
+      - name: Request ACM Certificate
+        id: acm
+        run: |
+          # Demander le certificat SSL
+          CERT_ARN=$(aws acm request-certificate \
+            --domain-name gerard-nouglozeh.com \
+            --subject-alternative-names "*.gerard-nouglozeh.com" \
+            --validation-method DNS \
+            --query 'CertificateArn' \
+            --output text)
+          echo "cert_arn=$CERT_ARN" >> $GITHUB_OUTPUT
+          echo "Certificate ARN: $CERT_ARN"
+
+          # Attendre que les infos DNS soient disponibles
+          sleep 10
+
+          # Recuperer les infos de validation DNS
+          aws acm describe-certificate --certificate-arn $CERT_ARN
+
+      - name: Create Route 53 validation records
+        run: |
+          # Recuperer la zone ID
+          ZONE_ID=$(aws route53 list-hosted-zones-by-name \
+            --dns-name gerard-nouglozeh.com \
+            --query 'HostedZones[0].Id' \
+            --output text | sed 's|/hostedzone/||')
+          echo "Zone ID: $ZONE_ID"
+
+          # Recuperer les infos de validation du certificat
+          CERT_ARN="${{ steps.acm.outputs.cert_arn }}"
+
+          VALIDATION_NAME=$(aws acm describe-certificate \
+            --certificate-arn $CERT_ARN \
+            --query 'Certificate.DomainValidationOptions[0].ResourceRecord.Name' \
+            --output text)
+
+          VALIDATION_VALUE=$(aws acm describe-certificate \
+            --certificate-arn $CERT_ARN \
+            --query 'Certificate.DomainValidationOptions[0].ResourceRecord.Value' \
+            --output text)
+
+          echo "Validation Name: $VALIDATION_NAME"
+          echo "Validation Value: $VALIDATION_VALUE"
+
+          # Creer l'enregistrement DNS de validation
+          aws route53 change-resource-record-sets \
+            --hosted-zone-id $ZONE_ID \
+            --change-batch '{
+              "Changes": [{
+                "Action": "UPSERT",
+                "ResourceRecordSet": {
+                  "Name": "'"$VALIDATION_NAME"'",
+                  "Type": "CNAME",
+                  "TTL": 300,
+                  "ResourceRecords": [{"Value": "'"$VALIDATION_VALUE"'"}]
+                }
+              }]
+            }'
+
+      - name: Wait for certificate validation
+        run: |
+          CERT_ARN="${{ steps.acm.outputs.cert_arn }}"
+          echo "Waiting for certificate validation..."
+          aws acm wait certificate-validated --certificate-arn $CERT_ARN
+          echo "Certificate validated!"
+
+      - name: Create CloudFront Distribution
+        run: |
+          CERT_ARN="${{ steps.acm.outputs.cert_arn }}"
+
+          # Creer la distribution CloudFront
+          DISTRIBUTION=$(aws cloudfront create-distribution \
+            --distribution-config '{
+              "CallerReference": "gerard-nouglozeh-'$(date +%s)'",
+              "Origins": {
+                "Quantity": 1,
+                "Items": [{
+                  "Id": "S3-sitewebtree-gerard",
+                  "DomainName": "sitewebtree.s3.eu-west-3.amazonaws.com",
+                  "OriginPath": "/gerard-nouglozeh",
+                  "S3OriginConfig": {
+                    "OriginAccessIdentity": ""
+                  }
+                }]
+              },
+              "DefaultCacheBehavior": {
+                "TargetOriginId": "S3-sitewebtree-gerard",
+                "ViewerProtocolPolicy": "redirect-to-https",
+                "AllowedMethods": {
+                  "Quantity": 2,
+                  "Items": ["GET", "HEAD"]
+                },
+                "CachePolicyId": "658327ea-f89d-4fab-a63d-7e88639e58f6",
+                "Compress": true
+              },
+              "Enabled": true,
+              "DefaultRootObject": "index.html",
+              "Aliases": {
+                "Quantity": 2,
+                "Items": ["gerard-nouglozeh.com", "www.gerard-nouglozeh.com"]
+              },
+              "ViewerCertificate": {
+                "ACMCertificateArn": "'"$CERT_ARN"'",
+                "SSLSupportMethod": "sni-only",
+                "MinimumProtocolVersion": "TLSv1.2_2021"
+              },
+              "Comment": "Portfolio Gerard Nouglozeh"
+            }')
+
+          DISTRIBUTION_ID=$(echo $DISTRIBUTION | jq -r '.Distribution.Id')
+          DISTRIBUTION_DOMAIN=$(echo $DISTRIBUTION | jq -r '.Distribution.DomainName')
+
+          echo "Distribution ID: $DISTRIBUTION_ID"
+          echo "Distribution Domain: $DISTRIBUTION_DOMAIN"
+          echo "distribution_id=$DISTRIBUTION_ID" >> $GITHUB_OUTPUT
+          echo "distribution_domain=$DISTRIBUTION_DOMAIN" >> $GITHUB_OUTPUT
+
+      - name: Configure Route 53 DNS
+        run: |
+          ZONE_ID=$(aws route53 list-hosted-zones-by-name \
+            --dns-name gerard-nouglozeh.com \
+            --query 'HostedZones[0].Id' \
+            --output text | sed 's|/hostedzone/||')
+
+          # Recuperer le domain CloudFront
+          CLOUDFRONT_DOMAIN=$(aws cloudfront list-distributions \
+            --query "DistributionList.Items[?Aliases.Items[?contains(@,'gerard-nouglozeh.com')]].DomainName" \
+            --output text)
+
+          echo "CloudFront Domain: $CLOUDFRONT_DOMAIN"
+
+          # Creer les enregistrements A alias vers CloudFront
+          aws route53 change-resource-record-sets \
+            --hosted-zone-id $ZONE_ID \
+            --change-batch '{
+              "Changes": [
+                {
+                  "Action": "UPSERT",
+                  "ResourceRecordSet": {
+                    "Name": "gerard-nouglozeh.com",
+                    "Type": "A",
+                    "AliasTarget": {
+                      "HostedZoneId": "Z2FDTNDATAQYW2",
+                      "DNSName": "'"$CLOUDFRONT_DOMAIN"'",
+                      "EvaluateTargetHealth": false
+                    }
+                  }
+                },
+                {
+                  "Action": "UPSERT",
+                  "ResourceRecordSet": {
+                    "Name": "www.gerard-nouglozeh.com",
+                    "Type": "A",
+                    "AliasTarget": {
+                      "HostedZoneId": "Z2FDTNDATAQYW2",
+                      "DNSName": "'"$CLOUDFRONT_DOMAIN"'",
+                      "EvaluateTargetHealth": false
+                    }
+                  }
+                }
+              ]
+            }'
+
+      - name: Summary
+        run: |
+          echo "======================================"
+          echo "Infrastructure setup complete!"
+          echo "======================================"
+          echo "Your site will be available at:"
+          echo "  - https://gerard-nouglozeh.com"
+          echo "  - https://www.gerard-nouglozeh.com"
+          echo ""
+          echo "Note: DNS propagation may take up to 48h"
+          echo "CloudFront deployment takes ~15-20 minutes"
