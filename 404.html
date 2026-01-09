@@ -20,24 +20,38 @@
             background: linear-gradient(135deg, #0a0a0f 0%, #1a1a2e 50%, #16213e 100%);
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
             color: #ffffff;
-            overflow: hidden;
+            overflow-x: hidden;
+            padding: 1rem;
+        }
+
+        /* Light Mode */
+        body.light-mode {
+            background: linear-gradient(135deg, #f0f4f8 0%, #e2e8f0 50%, #cbd5e1 100%);
+            color: #0f172a;
         }
 
         .container {
             text-align: center;
-            padding: 2rem;
+            padding: 1.5rem;
             max-width: 600px;
+            width: 100%;
         }
 
         .error-code {
-            font-size: 8rem;
+            font-size: clamp(4rem, 15vw, 8rem);
             font-weight: 700;
             background: linear-gradient(135deg, #00d9ff, #7b2cbf);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             background-clip: text;
-            text-shadow: 0 0 50px rgba(0, 217, 255, 0.3);
             animation: pulse 2s ease-in-out infinite;
+            line-height: 1;
+        }
+
+        body.light-mode .error-code {
+            background: linear-gradient(135deg, #0055aa, #7c3aed);
+            -webkit-background-clip: text;
+            background-clip: text;
         }
 
         @keyframes pulse {
@@ -46,29 +60,42 @@
         }
 
         .error-title {
-            font-size: 1.8rem;
-            margin: 1rem 0;
+            font-size: clamp(1.2rem, 4vw, 1.8rem);
+            margin: 0.75rem 0;
             color: #00d9ff;
         }
 
+        body.light-mode .error-title {
+            color: #0055aa;
+        }
+
         .error-message {
-            font-size: 1.1rem;
+            font-size: clamp(0.9rem, 2.5vw, 1.1rem);
             color: #b0b0b0;
-            margin-bottom: 2rem;
+            margin-bottom: 1.5rem;
             line-height: 1.6;
+        }
+
+        body.light-mode .error-message {
+            color: #475569;
         }
 
         .home-btn {
             display: inline-block;
-            padding: 1rem 2.5rem;
+            padding: 0.875rem 2rem;
             background: linear-gradient(135deg, #00d9ff, #7b2cbf);
             color: white;
             text-decoration: none;
             border-radius: 50px;
             font-weight: 600;
-            font-size: 1.1rem;
+            font-size: clamp(0.9rem, 2.5vw, 1.1rem);
             transition: all 0.3s ease;
             box-shadow: 0 10px 30px rgba(0, 217, 255, 0.3);
+        }
+
+        body.light-mode .home-btn {
+            background: linear-gradient(135deg, #0055aa, #7c3aed);
+            box-shadow: 0 10px 30px rgba(0, 85, 170, 0.3);
         }
 
         .home-btn:hover {
@@ -77,8 +104,8 @@
         }
 
         .pokemon {
-            width: 120px;
-            margin: 2rem auto;
+            width: clamp(80px, 20vw, 120px);
+            margin: 1.5rem auto;
             animation: float 3s ease-in-out infinite;
         }
 
@@ -107,6 +134,10 @@
             animation: rise 8s infinite;
         }
 
+        body.light-mode .particle {
+            background: #0055aa;
+        }
+
         @keyframes rise {
             0% {
                 transform: translateY(100vh) scale(0);
@@ -118,6 +149,17 @@
             100% {
                 transform: translateY(-100vh) scale(1);
                 opacity: 0;
+            }
+        }
+
+        /* Responsive */
+        @media (max-width: 480px) {
+            .container {
+                padding: 1rem;
+            }
+
+            .error-message br {
+                display: none;
             }
         }
     </style>
@@ -146,5 +188,12 @@
         <br>
         <a href="/" class="home-btn">Retour a l'accueil</a>
     </div>
+
+    <script>
+        // Detecter le mode light depuis localStorage
+        if (localStorage.getItem('theme') === 'light') {
+            document.body.classList.add('light-mode');
+        }
+    </script>
 </body>
 </html>
