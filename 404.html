@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>404 - Page non trouvee | Gerard NOUGLOZEH</title>
+    <link rel="icon" type="image/png" href="assets/pokemon.png">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, #0a0a0f 0%, #1a1a2e 50%, #16213e 100%);
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            color: #ffffff;
+            overflow: hidden;
+        }
+
+        .container {
+            text-align: center;
+            padding: 2rem;
+            max-width: 600px;
+        }
+
+        .error-code {
+            font-size: 8rem;
+            font-weight: 700;
+            background: linear-gradient(135deg, #00d9ff, #7b2cbf);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            text-shadow: 0 0 50px rgba(0, 217, 255, 0.3);
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+
+        .error-title {
+            font-size: 1.8rem;
+            margin: 1rem 0;
+            color: #00d9ff;
+        }
+
+        .error-message {
+            font-size: 1.1rem;
+            color: #b0b0b0;
+            margin-bottom: 2rem;
+            line-height: 1.6;
+        }
+
+        .home-btn {
+            display: inline-block;
+            padding: 1rem 2.5rem;
+            background: linear-gradient(135deg, #00d9ff, #7b2cbf);
+            color: white;
+            text-decoration: none;
+            border-radius: 50px;
+            font-weight: 600;
+            font-size: 1.1rem;
+            transition: all 0.3s ease;
+            box-shadow: 0 10px 30px rgba(0, 217, 255, 0.3);
+        }
+
+        .home-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 15px 40px rgba(0, 217, 255, 0.4);
+        }
+
+        .pokemon {
+            width: 120px;
+            margin: 2rem auto;
+            animation: float 3s ease-in-out infinite;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-15px); }
+        }
+
+        .particles {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: -1;
+        }
+
+        .particle {
+            position: absolute;
+            width: 4px;
+            height: 4px;
+            background: #00d9ff;
+            border-radius: 50%;
+            opacity: 0.5;
+            animation: rise 8s infinite;
+        }
+
+        @keyframes rise {
+            0% {
+                transform: translateY(100vh) scale(0);
+                opacity: 0;
+            }
+            50% {
+                opacity: 0.5;
+            }
+            100% {
+                transform: translateY(-100vh) scale(1);
+                opacity: 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="particles">
+        <div class="particle" style="left: 10%; animation-delay: 0s;"></div>
+        <div class="particle" style="left: 20%; animation-delay: 1s;"></div>
+        <div class="particle" style="left: 30%; animation-delay: 2s;"></div>
+        <div class="particle" style="left: 40%; animation-delay: 3s;"></div>
+        <div class="particle" style="left: 50%; animation-delay: 4s;"></div>
+        <div class="particle" style="left: 60%; animation-delay: 5s;"></div>
+        <div class="particle" style="left: 70%; animation-delay: 6s;"></div>
+        <div class="particle" style="left: 80%; animation-delay: 7s;"></div>
+        <div class="particle" style="left: 90%; animation-delay: 0.5s;"></div>
+    </div>
+
+    <div class="container">
+        <div class="error-code">404</div>
+        <h1 class="error-title">Oups ! Page non trouvee</h1>
+        <p class="error-message">
+            La page que vous cherchez n'existe pas ou a ete deplacee.<br>
+            Mais ne vous inquietez pas, Dracaufeu va vous ramener a l'accueil !
+        </p>
+        <img src="assets/pokemon.png" alt="Dracaufeu" class="pokemon">
+        <br>
+        <a href="/" class="home-btn">Retour a l'accueil</a>
+    </div>
+</body>
+</html>
