@@ -22,7 +22,7 @@ jobs:
 
       - name: Sync to S3
         run: |
-          aws s3 sync . s3://sitewebtree \
+          aws s3 sync . s3://sitewebtree/gerard-nouglozeh \
             --delete \
             --exclude ".git/*" \
             --exclude ".github/*"
