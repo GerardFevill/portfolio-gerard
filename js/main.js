@@ -354,27 +354,31 @@ class NavbarScroll {
     }
 
     init() {
-        window.addEventListener('scroll', () => {
-            const isLightMode = document.body.classList.contains('light-mode');
+        const handleScroll = () => {
+            const isDarkMode = document.body.classList.contains('dark-mode');
 
             if (window.scrollY > 100) {
-                if (isLightMode) {
-                    this.navbar.style.background = 'rgba(255, 255, 255, 0.98)';
-                    this.navbar.style.boxShadow = '0 5px 30px rgba(0, 0, 0, 0.1)';
-                } else {
+                if (isDarkMode) {
                     this.navbar.style.background = 'rgba(10, 10, 15, 0.95)';
                     this.navbar.style.boxShadow = '0 5px 30px rgba(0, 0, 0, 0.3)';
+                } else {
+                    this.navbar.style.background = 'rgba(255, 255, 255, 0.98)';
+                    this.navbar.style.boxShadow = '0 5px 30px rgba(79, 70, 229, 0.1)';
                 }
             } else {
-                if (isLightMode) {
-                    this.navbar.style.background = 'rgba(255, 255, 255, 0.9)';
+                if (isDarkMode) {
+                    this.navbar.style.background = 'rgba(10, 10, 15, 0.8)';
                     this.navbar.style.boxShadow = 'none';
                 } else {
-                    this.navbar.style.background = 'rgba(10, 10, 15, 0.8)';
+                    this.navbar.style.background = 'rgba(255, 255, 255, 0.9)';
                     this.navbar.style.boxShadow = 'none';
                 }
             }
-        });
+        };
+
+        window.addEventListener('scroll', handleScroll);
+        // Run once on init to handle page reload position
+        handleScroll();
     }
 }
 
@@ -445,9 +449,9 @@ class ContactForm {
             <div class="popup-box ${type}">
                 <div class="popup-icon">
                     ${isSuccess
-                        ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>'
-                        : '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="15" y1="9" x2="9" y2="15"></line><line x1="9" y1="9" x2="15" y2="15"></line></svg>'
-                    }
+                ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>'
+                : '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="15" y1="9" x2="9" y2="15"></line><line x1="9" y1="9" x2="15" y2="15"></line></svg>'
+            }
                 </div>
                 <h3 class="popup-title">${title}</h3>
                 <p class="popup-message">${message}</p>
@@ -576,10 +580,13 @@ class ThemeToggle {
     }
 
     init() {
-        // Check saved theme
+        // Check saved theme or system preference
         const savedTheme = localStorage.getItem('theme');
-        if (savedTheme === 'light') {
-            this.body.classList.add('light-mode');
+        const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+
+        // Default is LIGHT now, so we toggle DARK if needed
+        if (savedTheme === 'dark' || (!savedTheme && prefersDark)) {
+            this.body.classList.add('dark-mode');
         }
 
         if (this.toggle) {
@@ -588,26 +595,19 @@ class ThemeToggle {
     }
 
     toggleTheme() {
-        this.body.classList.toggle('light-mode');
+        this.body.classList.toggle('dark-mode');
 
-        // Update navbar background
-        const navbar = document.querySelector('.navbar');
-        const isLightMode = this.body.classList.contains('light-mode');
+        // Update navbar background if needed (CSS handles most, but for JS dynamic changes)
+        const isDarkMode = this.body.classList.contains('dark-mode');
 
-        if (isLightMode) {
-            navbar.style.background = 'rgba(255, 255, 255, 0.9)';
-        } else {
-            navbar.style.background = 'rgba(10, 10, 15, 0.8)';
-        }
+        localStorage.setItem('theme', isDarkMode ? 'dark' : 'light');
 
-        // Save preference
-        if (isLightMode) {
-            localStorage.setItem('theme', 'light');
-        } else {
-            localStorage.setItem('theme', 'dark');
-        }
+        // Force navbar update by triggering scroll event
+        window.dispatchEvent(new Event('scroll'));
     }
 }
+
+
 
 // ===============================================
 // INITIALIZE ALL
@@ -621,9 +621,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
     if (roleElement) {
         new TypeWriter(roleElement, [
-            'Tech Lead Angular',
-            'Fullstack Java/NodeJS',
-            'DevOps & Cloud AWS'
+            'Architecture Hybrid AI / Cloud',
+            'Deployment RAG & LLM Ops',
+            'Secure Enterprise Agents'
         ], 80, 2000);
     }
 
@@ -637,7 +637,133 @@ document.addEventListener('DOMContentLoaded', () => {
     new ContactForm();
     new TechIconsAnimation();
     new ThemeToggle();
+
+    // Boot Loader (Only on first visit or forced)
+    new BootLoader();
+
+    // 3D Tilt Effect
+    new TiltEffect();
 });
+
+// ===============================================
+// 3D TILT EFFECT
+// ===============================================
+class TiltEffect {
+    constructor() {
+        this.cards = document.querySelectorAll('.tilt-card');
+        this.init();
+    }
+
+    init() {
+        this.cards.forEach(card => {
+            card.addEventListener('mousemove', (e) => this.handleMove(e, card));
+            card.addEventListener('mouseleave', () => this.handleLeave(card));
+        });
+    }
+
+    handleMove(e, card) {
+        const rect = card.getBoundingClientRect();
+        const x = e.clientX - rect.left;
+        const y = e.clientY - rect.top;
+
+        const centerX = rect.width / 2;
+        const centerY = rect.height / 2;
+
+        const rotateX = ((y - centerY) / centerY) * -10; // Max 10deg rotation
+        const rotateY = ((x - centerX) / centerX) * 10;
+
+        card.style.transform = `perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale3d(1.02, 1.02, 1.02)`;
+
+        // Glare effect
+        this.updateGlare(card, x, y);
+    }
+
+    handleLeave(card) {
+        card.style.transform = 'perspective(1000px) rotateX(0) rotateY(0) scale3d(1, 1, 1)';
+        const glare = card.querySelector('.glare');
+        if (glare) glare.style.opacity = '0';
+    }
+
+    updateGlare(card, x, y) {
+        let glare = card.querySelector('.glare');
+        if (!glare) {
+            glare = document.createElement('div');
+            glare.className = 'glare';
+            card.appendChild(glare);
+        }
+
+        glare.style.left = `${x}px`;
+        glare.style.top = `${y}px`;
+        glare.style.opacity = '1';
+    }
+}
+
+// ===============================================
+// BOOT LOADER
+// ===============================================
+class BootLoader {
+    constructor() {
+        this.loader = document.getElementById('loader');
+        this.sequence = document.getElementById('boot-sequence');
+        this.bar = document.getElementById('loader-bar');
+        this.messages = [
+            { text: '> INIT: Neural Interface v2.0...', delay: 200 },
+            { text: '> LOADING: RAG Inference Engine...', delay: 400 },
+            { text: '> CONNECTING: Secure Sovereign Cloud...', delay: 600 },
+            { text: '> OPTIMIZING: Vector Embeddings...', delay: 500 },
+            { text: '> MOUNTING: Enterprise Knowledge Base...', delay: 400 },
+            { text: '> SYSTEM: AI Architect Skills Loaded.', delay: 500, class: 'highlight' }
+        ];
+
+        // Check if already visited (session storage)
+        if (!sessionStorage.getItem('booted')) {
+            this.runSequence();
+        } else {
+            this.quickHide();
+        }
+    }
+
+    async runSequence() {
+        let totalDelay = 0;
+
+        for (let i = 0; i < this.messages.length; i++) {
+            const msg = this.messages[i];
+            totalDelay += msg.delay;
+
+            setTimeout(() => {
+                this.addLine(msg);
+                this.updateProgress((i + 1) / this.messages.length * 100);
+            }, totalDelay);
+        }
+
+        setTimeout(() => {
+            this.finish();
+        }, totalDelay + 800);
+    }
+
+    addLine(msg) {
+        const line = document.createElement('div');
+        line.className = `boot-line ${msg.class || ''}`;
+        line.textContent = msg.text;
+        this.sequence.appendChild(line);
+        this.sequence.scrollTop = this.sequence.scrollHeight;
+    }
+
+    updateProgress(percent) {
+        this.bar.style.width = `${percent}%`;
+    }
+
+    finish() {
+        document.body.classList.add('loaded');
+        sessionStorage.setItem('booted', 'true');
+    }
+
+    quickHide() {
+        // Instant hide for returning visitors, but ensure smooth transition
+        this.bar.style.width = '100%';
+        document.body.classList.add('loaded');
+    }
+}
 
 // Add CSS for fade-in animation
 const style = document.createElement('style');
